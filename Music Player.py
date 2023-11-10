@@ -10,6 +10,8 @@ class MusicPlayer:
         self.root.geometry("400x200")
 
         self.playlist = []
+        self.current_track = None
+        self.paused = False
 
         self.track_var = tk.StringVar()
         self.status_var = tk.StringVar()
@@ -34,17 +36,30 @@ class MusicPlayer:
 
     def play_music(self):
         if self.playlist:
-            pygame.mixer.music.load(self.playlist[0])
-            pygame.mixer.music.play()
-            self.track_var.set("Now Playing: " + os.path.basename(self.playlist[0]))
-            self.status_var.set("Status: Playing")
+            if pygame.mixer.get_init() is None:
+                pygame.mixer.init()
+            if self.paused:
+                pygame.mixer.music.unpause()
+                self.paused = False
+                self.status_var.set("Status: Playing")
+            else:
+                if self.current_track is not None:
+                    pygame.mixer.music.stop()
+                self.current_track = pygame.mixer.Sound(self.playlist[0])
+                pygame.mixer.music.load(self.playlist[0])
+                pygame.mixer.music.play()
+                self.track_var.set("Now Playing: " + os.path.basename(self.playlist[0]))
+                self.status_var.set("Status: Playing")
 
     def pause_music(self):
-        pygame.mixer.music.pause()
-        self.status_var.set("Status: Paused")
+        if pygame.mixer.music.get_busy():
+            pygame.mixer.music.pause()
+            self.paused = True
+            self.status_var.set("Status: Paused")
 
     def stop_music(self):
         pygame.mixer.music.stop()
+        self.paused = False
         self.status_var.set("Status: Stopped")
 
     def select_music(self):
@@ -60,8 +75,4 @@ class MusicPlayer:
 if __name__ == "__main__":
     root = tk.Tk()
     app = MusicPlayer(root)
-
-    # Initialize Pygame Mixer
-    pygame.mixer.init()
-
     root.mainloop()
